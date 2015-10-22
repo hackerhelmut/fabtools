@@ -20,7 +20,7 @@ def pkg_manager():
         else:
             manager = 'pacman'
 
-        return 'LC_ALL=C %s' % manager
+        return manager
 
 
 def update_index(quiet=True):
@@ -31,9 +31,9 @@ def update_index(quiet=True):
     manager = pkg_manager()
     if quiet:
         with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
-            run_as_root("%(manager)s -Sy" % locals())
+            run_as_root("LC_ALL=C %(manager)s -Sy" % locals())
     else:
-        run_as_root("%(manager)s -Sy" % locals())
+        run_as_root("LC_ALL=C %(manager)s -Sy" % locals())
 
 
 def upgrade():
@@ -41,7 +41,7 @@ def upgrade():
     Upgrade all packages.
     """
     manager = pkg_manager()
-    run_as_root("%(manager)s -Su" % locals(), pty=False)
+    run_as_root("LC_ALL=C %(manager)s -Su" % locals(), pty=False)
 
 
 def is_installed(pkg_name):
@@ -85,8 +85,12 @@ def install(packages, update=False, options=None):
     if not isinstance(packages, basestring):
         packages = " ".join(packages)
     options = " ".join(options)
-    cmd = '%(manager)s -S %(options)s %(packages)s' % locals()
-    run_as_root(cmd, pty=False)
+    cmd = 'LC_ALL=C %(manager)s -S %(options)s %(packages)s' % locals()
+
+    if manager == 'yaourt':
+        run(cmd, pty=False)
+    else:
+        run_as_root(cmd, pty=False)
 
 
 def uninstall(packages, options=None):
@@ -101,5 +105,9 @@ def uninstall(packages, options=None):
     if not isinstance(packages, basestring):
         packages = " ".join(packages)
     options = " ".join(options)
-    cmd = '%(manager)s -R %(options)s %(packages)s' % locals()
-    run_as_root(cmd, pty=False)
+    cmd = 'LC_ALL=C %(manager)s -R %(options)s %(packages)s' % locals()
+
+    if manager == 'yaourt':
+        run(cmd, pty=False)
+    else:
+        run_as_root(cmd, pty=False)

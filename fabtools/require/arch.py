@@ -14,7 +14,7 @@ from fabtools.arch import (
 )
 
 
-def package(pkg_name, update=False):
+def package(pkg_name, update=False, options=None):
     """
     Require an Arch Linux package to be installed.
 
@@ -25,10 +25,10 @@ def package(pkg_name, update=False):
         require.arch.package('foo')
     """
     if not is_installed(pkg_name):
-        install(pkg_name, update)
+        install(pkg_name, update, options)
 
 
-def packages(pkg_list, update=False):
+def packages(pkg_list, update=False, options=None):
     """
     Require several Arch Linux packages to be installed.
 
@@ -44,7 +44,7 @@ def packages(pkg_list, update=False):
     """
     pkg_list = [pkg for pkg in pkg_list if not is_installed(pkg)]
     if pkg_list:
-        install(pkg_list, update)
+        install(pkg_list, update, options)
 
 
 def nopackage(pkg_name):
