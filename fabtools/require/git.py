@@ -8,6 +8,8 @@ This module provides high-level tools for managing `Git`_ repositories.
 
 """
 
+import functools
+
 from fabric.api import run
 
 from fabtools import git
@@ -35,17 +37,19 @@ def command():
 
     res = run('git --version', quiet=True)
     if res.failed:
+        dispatch_family = {
+            'debian': functools.partial(require_deb_package, 'git-core'),
+            'redhat': functools.partial(require_rpm_package, 'git'),
+            'sun': functools.partial(require_pkg_package, 'scmgit-base'),
+            'gentoo': functools.partial(require_portage_package, 'dev-vcs/git')
+        }
         family = distrib_family()
-        if family == 'debian':
-            require_deb_package('git-core')
-        elif family == 'redhat':
-            require_rpm_package('git')
-        elif family == 'sun':
-            require_pkg_package('scmgit-base')
-        elif family == 'gentoo':
-            require_portage_package('dev-vcs/git')
-        else:
-            raise UnsupportedFamily(supported=['debian', 'redhat', 'sun', 'gentoo'])
+
+        try:
+            dispatch_family[family]()
+        except KeyError:
+            raise UnsupportedFamily(
+                supported=['debian', 'redhat', 'sun', 'gentoo'])
 
 
 def working_copy(remote_url, path=None, branch="master", update=True,
