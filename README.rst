@@ -98,6 +98,8 @@ Supported targets
   - Gentoo
 
   - SmartOS (Joyent)
+  - Archlinux
+  - Openwrt
 
 Contributions to help improve existing support and extend it to other
 Unix/Linux distributions are welcome!
