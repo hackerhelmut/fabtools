@@ -92,7 +92,14 @@ def ppa(name, auto_accept=True, keyserver=None):
 
     user, repo = name[4:].split('/', 2)
 
-    release = float(distrib_release())
+    # For ubuntu based distribution with their own version system
+    # e.g. Elementary OS Luna version returned by lsb_release is 0.2.1
+    # which raise ValueError exception on float() call
+    try:
+        release = float(distrib_release())
+    except ValueError:
+        release = 12.04
+
     if release >= 12.04:
         repo = repo.replace('.', '_')
         auto_accept = '--yes' if auto_accept else ''
