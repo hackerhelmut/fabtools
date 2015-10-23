@@ -11,7 +11,7 @@ from fabtools.utils import run_as_root
 def user(name, comment=None, home=None, create_home=None, skeleton_dir=None,
          group=None, create_group=True, extra_groups=None, password=None,
          system=False, shell=None, uid=None, ssh_public_keys=None,
-         non_unique=False):
+         non_unique=False, expiredate=None):
     """
     Require a user and its home directory.
 
@@ -44,12 +44,12 @@ def user(name, comment=None, home=None, create_home=None, skeleton_dir=None,
                skeleton_dir=skeleton_dir, group=group,
                create_group=create_group, extra_groups=extra_groups,
                password=password, system=system, shell=shell, uid=uid,
-               ssh_public_keys=ssh_public_keys, non_unique=non_unique)
+               ssh_public_keys=ssh_public_keys, non_unique=non_unique, expiredate=expiredate)
     else:
         modify(name, comment=comment, home=home, group=group,
                extra_groups=extra_groups, password=password,
                shell=shell, uid=uid, ssh_public_keys=ssh_public_keys,
-               non_unique=non_unique)
+               non_unique=non_unique, expiredate=expiredate)
 
     # Make sure the home directory exists and is owned by user
     if home:

@@ -17,6 +17,15 @@ from fabtools.group import (
 from fabtools.files import uncommented_lines
 from fabtools.utils import run_as_root
 
+def list():
+    """
+    List all useres
+    """
+    res = ""
+    with settings(hide('running', 'stdout', 'warnings'), warn_only=True):
+        res = run('getent group')
+    return [line.split(':') for line in res.splitlines()]
+
 
 def exists(name):
     """
@@ -42,7 +51,7 @@ def _crypt_password(password):
 def create(name, comment=None, home=None, create_home=None, skeleton_dir=None,
            group=None, create_group=True, extra_groups=None, password=None,
            system=False, shell=None, uid=None, ssh_public_keys=None,
-           non_unique=False):
+           non_unique=False, expiredate=None):
     """
     Create a new user and its home directory.
 
@@ -112,19 +121,26 @@ def create(name, comment=None, home=None, create_home=None, skeleton_dir=None,
         args.append('-u %s' % uid)
         if non_unique:
             args.append('-o')
+    if expiredate:
+        args.append('-e %s' % expiredate)
     args.append(name)
     args = ' '.join(args)
     run_as_root('useradd %s' % args)
 
     if ssh_public_keys:
+        kw = {}
         if isinstance(ssh_public_keys, basestring):
             ssh_public_keys = [ssh_public_keys]
-        add_ssh_public_keys(name, ssh_public_keys)
+        if isinstance(ssh_public_keys, dict):
+            kw["keys"] = ssh_public_keys
+        else:
+            kw["filenames"] = ssh_public_keys
+        add_ssh_public_keys(name, **kw)
 
 
 def modify(name, comment=None, home=None, move_current_home=False, group=None,
            extra_groups=None, login_name=None, password=None, shell=None,
-           uid=None, ssh_public_keys=None, non_unique=False):
+           uid=None, ssh_public_keys=None, non_unique=False, expiredate=None):
     """
     Modify an existing user.
 
@@ -164,6 +180,8 @@ def modify(name, comment=None, home=None, move_current_home=False, group=None,
         args.append('-u %s' % quote(uid))
         if non_unique:
             args.append('-o')
+    if expiredate:
+        args.append('-e %s' % expiredate)
 
     if args:
         args.append(name)
@@ -171,9 +189,14 @@ def modify(name, comment=None, home=None, move_current_home=False, group=None,
         run_as_root('usermod %s' % args)
 
     if ssh_public_keys:
+        kw = {}
         if isinstance(ssh_public_keys, basestring):
             ssh_public_keys = [ssh_public_keys]
-        add_ssh_public_keys(name, ssh_public_keys)
+        if isinstance(ssh_public_keys, dict):
+            kw["keys"] = ssh_public_keys
+        else:
+            kw["filenames"] = ssh_public_keys
+        add_ssh_public_keys(name, **kw)
 
 
 def home_directory(name):
@@ -217,7 +240,7 @@ def authorized_keys(name):
     return uncommented_lines(authorized_keys_filename, use_sudo=True)
 
 
-def add_ssh_public_key(name, filename):
+def add_ssh_public_key(name, filename=None, key=None):
     """
     Add a public key to the user's authorized SSH keys.
 
@@ -231,11 +254,18 @@ def add_ssh_public_key(name, filename):
         fabtools.user.add_ssh_public_key('alice', '~/.ssh/id_rsa.pub')
 
     """
+    filenames = []
+    if filename:
+        filenames = [filename]
 
-    add_ssh_public_keys(name, [filename])
+    keys = {}
+    if key:
+        keys = {name: key}
+
+    add_ssh_public_keys(name, filenames, keys)
 
 
-def add_ssh_public_keys(name, filenames):
+def add_ssh_public_keys(name, filenames=[], keys={}):
     """
     Add multiple public keys to the user's authorized SSH keys.
 
@@ -273,6 +303,12 @@ def add_ssh_public_keys(name, filenames):
         # we don't use fabric.contrib.files.append() as it's buggy
         if public_key not in authorized_keys(name):
             sudo('echo %s >>%s' % (quote(public_key),
+                                   quote(authorized_keys_filename)))
+
+    for key in keys.values():
+        # we don't use fabric.contrib.files.append() as it's buggy
+        if key not in authorized_keys(name):
+            sudo('echo %s >>%s' % (quote(key),
                                    quote(authorized_keys_filename)))
 
 

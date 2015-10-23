@@ -7,6 +7,14 @@ from fabric.api import hide, run, settings
 
 from fabtools.utils import run_as_root
 
+def list():
+    """
+    List all useres
+    """
+    res = ""
+    with settings(hide('running', 'stdout', 'warnings'), warn_only=True):
+        res = run('getent group')
+    return [line.split(':') for line in res.splitlines()]
 
 def exists(name):
     """
@@ -14,7 +22,6 @@ def exists(name):
     """
     with settings(hide('running', 'stdout', 'warnings'), warn_only=True):
         return run('getent group %(name)s' % locals()).succeeded
-
 
 def create(name, gid=None):
     """
